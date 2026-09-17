@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Smart Calculator - a responsive calculator built with HTML, CSS and vanilla JavaScript." />
+  <title>Smart Calculator</title>
+
+  <!-- All CSS is inlined here so this single file runs on its own -->
+  <style>
+/* =========================================================
+   Smart Calculator - style.css
+   CodSoft Web Development Internship
+   ---------------------------------------------------------
+   Sections in this file:
+     1. Theme variables (dark + light)
+     2. Base / reset
+     3. Page layout and heading
+     4. Calculator card, top bar, display
+     5. Keypad buttons and animations
+     6. History panel
+     7. Responsive rules (tablet + mobile)
+   ========================================================= */
+
+
+/* ---------- 1. THEME VARIABLES ----------
+   All colours live here as CSS custom properties.
+   Switching the data-theme attribute on <html> swaps the whole palette. */
+
+:root,
+[data-theme="dark"] {
+  --bg:            #0f1420;   /* page background        */
+  --bg-glow:       #1b2742;   /* soft radial highlight  */
+  --card-bg:       #182033;   /* calculator surface     */
+  --panel:         #141b2b;   /* display + history      */
+  --key:           #263149;   /* number keys            */
+  --key-hover:     #303c58;
+  --text:          #eef2fb;
+  --text-soft:     #8f9cbb;   /* secondary text         */
+  --border:        #28324a;
+  --operator:      #5b7cfa;   /* blue operator keys     */
+  --operator-hover:#748ffb;
+  --operator-text: #ffffff;
+  --equals:        #ffb020;   /* amber equals key       */
+  --equals-hover:  #ffc24d;
+  --equals-text:   #1b1200;
+  --clear:         #ff6b6b;   /* red AC key             */
+  --clear-soft:    rgba(255, 107, 107, .45);
+  --clear-tint:    rgba(255, 107, 107, .14);
+  --dot-glow:      rgba(255, 176, 32, .22);
+  --shadow:        0 24px 60px rgba(0, 0, 0, .55);
+  --focus:         #ffb020;
+}
+
+[data-theme="light"] {
+  --bg:            #eaeef6;
+  --bg-glow:       #ffffff;
+  --card-bg:       #ffffff;
+  --panel:         #f3f6fc;
+  --key:           #e8ecf6;
+  --key-hover:     #dbe2f2;
+  --text:          #161d2e;
+  --text-soft:     #5d6883;
+  --border:        #dde3ef;
+  --operator:      #3f5fe0;
+  --operator-hover:#5a76e8;
+  --operator-text: #ffffff;
+  --equals:        #f0900a;
+  --equals-hover:  #ffa726;
+  --equals-text:   #ffffff;
+  --clear:         #e04646;
+  --clear-soft:    rgba(224, 70, 70, .40);
+  --clear-tint:    rgba(224, 70, 70, .10);
+  --dot-glow:      rgba(240, 144, 10, .22);
+  --shadow:        0 20px 45px rgba(30, 45, 90, .16);
+  --focus:         #3f5fe0;
+}
+
+
+/* ---------- 2. BASE / RESET ---------- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  background-color: var(--bg);
+  /* subtle glow behind the calculator so the card feels lifted */
+  background-image: radial-gradient(circle at 50% 0%, var(--bg-glow) 0%, var(--bg) 55%);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 16px;
+  transition: background-color .35s ease, color .35s ease;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Visible keyboard focus for accessibility */
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+
+/* ---------- 3. PAGE LAYOUT + HEADING ---------- */
+
+.page {
+  width: 100%;
+  max-width: 400px;          /* keeps the calculator centred and compact */
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.page-head {
+  text-align: center;
+}
+
+.title {
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: .82rem;
+  color: var(--text-soft);
+}
+
+
+/* ---------- 4. CALCULATOR CARD ---------- */
+
+.calculator {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: background-color .35s ease, border-color .35s ease;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px 12px;
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--equals);
+  box-shadow: 0 0 0 4px var(--dot-glow);
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .8rem;
+  color: var(--text-soft);
+  background-color: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
+  background-color: var(--key);
+}
+
+/* --- Display area --- */
+
+.display {
+  background-color: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  text-align: right;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.expression {
+  font-size: .95rem;
+  color: var(--text-soft);
+  min-height: 1.2em;
+  /* long expressions scroll instead of breaking the layout */
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.expression::-webkit-scrollbar { display: none; }
+
+.result {
+  font-size: 2.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;   /* digits keep equal width */
+  word-break: break-all;
+  transition: font-size .15s ease;
+}
+
+/* Applied by JS when a very long number is shown */
+.result.small { font-size: 1.7rem; }
+
+/* Applied by JS when a calculation is invalid */
+.result.error {
+  color: var(--clear);
+  font-size: 1.5rem;
+}
+
+
+/* ---------- 5. KEYPAD ---------- */
+
+.keypad {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.key {
+  aspect-ratio: 1 / 1;            /* perfectly round-ish square keys */
+  border-radius: 18px;
+  background-color: var(--key);
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background-color .18s ease, transform .08s ease, box-shadow .18s ease;
+}
+
+.key:hover {
+  background-color: var(--key-hover);
+}
+
+/* Click / keyboard press animation.
+   .pressed is added briefly by JavaScript for keyboard input. */
+.key:active,
+.key.pressed {
+  transform: scale(.93);
+}
+
+/* The decimal point is a small glyph, so it gets a larger size to match */
+.key[data-action="decimal"] {
+  font-size: 2rem;
+}
+
+/* Function keys: AC, DEL, % */
+.key-fn {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.key-fn:hover {
+  background-color: var(--key);
+  color: var(--text);
+}
+
+.key-clear {
+  color: var(--clear);
+  border-color: var(--clear-soft);
+}
+
+.key-clear:hover {
+  background-color: var(--clear-tint);
+  color: var(--clear);
+}
+
+/* Operator keys */
+.key-op {
+  background-color: var(--operator);
+  color: var(--operator-text);
+  font-size: 1.5rem;
+}
+
+.key-op:hover {
+  background-color: var(--operator-hover);
+}
+
+/* The operator currently waiting for a second number */
+.key-op.active {
+  box-shadow: inset 0 0 0 3px var(--card-bg), 0 0 0 2px var(--operator);
+}
+
+/* Equals key */
+.key-equals {
+  background-color: var(--equals);
+  color: var(--equals-text);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.key-equals:hover {
+  background-color: var(--equals-hover);
+}
+
+
+/* ---------- 6. HISTORY PANEL ---------- */
+
+.history {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 14px 16px 16px;
+  transition: background-color .35s ease, border-color .35s ease;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.history-title {
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.history-clear {
+  font-size: .78rem;
+  color: var(--text-soft);
+  border-bottom: 1px solid transparent;
+  transition: color .2s ease, border-color .2s ease;
+}
+
+.history-clear:hover {
+  color: var(--clear);
+  border-bottom-color: var(--clear);
+}
+
+.history-list {
+  list-style: none;
+}
+
+.history-item {
+  width: 100%;
+  text-align: right;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border-bottom: 1px solid var(--border);
+  transition: background-color .18s ease;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:hover {
+  background-color: var(--panel);
+}
+
+.history-item .hx-expression {
+  display: block;
+  font-size: .78rem;
+  color: var(--text-soft);
+}
+
+.history-item .hx-result {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-empty {
+  font-size: .8rem;
+  color: var(--text-soft);
+  padding: 6px 2px;
+}
+
+/* JS adds .hidden to whichever of the list / empty message is not needed */
+.hidden {
+  display: none;
+}
+
+
+/* ---------- FOOTER ---------- */
+
+.page-foot {
+  text-align: center;
+  font-size: .75rem;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+kbd {
+  font-family: inherit;
+  font-size: .72rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 5px;
+}
+
+
+/* ---------- 7. RESPONSIVE ---------- */
+
+/* Tablet and small laptops */
+@media (max-width: 620px) {
+  .page { max-width: 380px; }
+}
+
+/* Mobile phones */
+@media (max-width: 420px) {
+  body { padding: 18px 12px; }
+  .title { font-size: 1.6rem; }
+  .result { font-size: 2.2rem; }
+  .key {
+    border-radius: 15px;
+    font-size: 1.2rem;
+  }
+  .keypad { gap: 8px; }
+  .calculator { padding: 12px; border-radius: 20px; }
+}
+
+/* Very short screens (landscape phones): stop the keys getting too tall */
+@media (max-height: 640px) {
+  .key { aspect-ratio: 5 / 4; }
+  .display { min-height: 96px; }
+}
+
+/* Respect users who prefer less animation */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+  </style>
+</head>
+
+<body>
+
+  <!-- ===== Page wrapper: keeps everything centred on the screen ===== -->
+  <main class="page">
+
+    <!-- ===== Heading area ===== -->
+    <header class="page-head">
+      <h1 class="title">Smart Calculator</h1>
+      <p class="subtitle">CodSoft Web Development Internship &mdash; Task 3</p>
+    </header>
+
+    <!-- ===== Calculator card ===== -->
+    <section class="calculator" aria-label="Calculator">
+
+      <!-- Top bar: theme toggle -->
+      <div class="topbar">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <button
+          type="button"
+          id="themeToggle"
+          class="theme-toggle"
+          aria-pressed="false"
+          title="Switch between dark and light theme">
+          <span id="themeIcon" aria-hidden="true">&#9790;</span>
+          <span id="themeLabel">Dark</span>
+        </button>
+      </div>
+
+      <!-- Display area: small line shows the running expression,
+           big line shows the current number / result -->
+      <div class="display" id="display">
+        <div class="expression" id="expression" aria-hidden="true">&nbsp;</div>
+        <output class="result" id="result" aria-live="polite">0</output>
+      </div>
+
+      <!-- ===== Keypad =====
+           data-action  -> tells JavaScript what the button does
+           data-value   -> the digit or operator the button carries -->
+      <div class="keypad">
+        <button type="button" class="key key-fn key-clear" data-action="clear">AC</button>
+        <button type="button" class="key key-fn" data-action="delete" title="Backspace">DEL</button>
+        <button type="button" class="key key-fn" data-action="percent">%</button>
+        <button type="button" class="key key-op" data-action="operator" data-value="/">&divide;</button>
+
+        <button type="button" class="key" data-action="number" data-value="7">7</button>
+        <button type="button" class="key" data-action="number" data-value="8">8</button>
+        <button type="button" class="key" data-action="number" data-value="9">9</button>
+        <button type="button" class="key key-op" data-action="operator" data-value="*">&times;</button>
+
+        <button type="button" class="key" data-action="number" data-value="4">4</button>
+        <button type="button" class="key" data-action="number" data-value="5">5</button>
+        <button type="button" class="key" data-action="number" data-value="6">6</button>
+        <button type="button" class="key key-op" data-action="operator" data-value="-">&minus;</button>
+
+        <button type="button" class="key" data-action="number" data-value="1">1</button>
+        <button type="button" class="key" data-action="number" data-value="2">2</button>
+        <button type="button" class="key" data-action="number" data-value="3">3</button>
+        <button type="button" class="key key-op" data-action="operator" data-value="+">+</button>
+
+        <button type="button" class="key" data-action="sign" title="Change sign">&plusmn;</button>
+        <button type="button" class="key" data-action="number" data-value="0">0</button>
+        <button type="button" class="key" data-action="decimal">.</button>
+        <button type="button" class="key key-equals" data-action="equals">=</button>
+      </div>
+
+    </section>
+
+    <!-- ===== History panel ===== -->
+    <section class="history" aria-label="Calculation history">
+      <div class="history-head">
+        <h2 class="history-title">Recent calculations</h2>
+        <button type="button" id="clearHistory" class="history-clear">Clear history</button>
+      </div>
+
+      <!-- Filled by JavaScript. Click any row to reuse that result. -->
+      <ul class="history-list" id="historyList"></ul>
+
+      <p class="history-empty" id="historyEmpty">Your last five calculations will appear here.</p>
+    </section>
+
+    <footer class="page-foot">
+      <p>Keyboard friendly: numbers, <kbd>+ &minus; * /</kbd>, <kbd>Enter</kbd> to solve, <kbd>Backspace</kbd> to delete, <kbd>Esc</kbd> to clear.</p>
+    </footer>
+
+  </main>
+
+  <!-- All JavaScript is inlined here, after the HTML so every element exists -->
+  <script>
+/* =========================================================
+   Smart Calculator - script.js
+   CodSoft Web Development Internship
+   ---------------------------------------------------------
+   No eval() is used anywhere. Every calculation is done with
+   plain JavaScript functions so the logic is easy to follow.
+
+   Sections in this file:
+     1.  Element references
+     2.  Calculator state
+     3.  Safe storage helper (localStorage with fallback)
+     4.  Number helpers (rounding + display formatting)
+     5.  Core maths
+     6.  Button actions (numbers, operators, equals, etc.)
+     7.  Display updating
+     8.  History (save, render, clear)
+     9.  Theme toggle
+     10. Event listeners (mouse + keyboard)
+   ========================================================= */
+
+"use strict";
+
+
+/* ---------- 1. ELEMENT REFERENCES ---------- */
+
+const resultEl      = document.getElementById("result");
+const expressionEl  = document.getElementById("expression");
+const keypadEl      = document.querySelector(".keypad");
+const historyListEl = document.getElementById("historyList");
+const historyEmptyEl= document.getElementById("historyEmpty");
+const clearHistoryBtn = document.getElementById("clearHistory");
+const themeToggleBtn  = document.getElementById("themeToggle");
+const themeIconEl     = document.getElementById("themeIcon");
+const themeLabelEl    = document.getElementById("themeLabel");
+
+
+/* ---------- 2. CALCULATOR STATE ----------
+   Everything the calculator needs to remember is kept here.
+
+   currentInput           the number currently being typed (stored as text)
+   storedValue            the first number of a pending calculation
+   pendingOperator        "+", "-", "*" or "/" waiting for a second number
+   waitingForSecondNumber true right after an operator is pressed
+   justEvaluated          true right after "=" so the next digit starts fresh
+   isError                true when the display is showing an error message   */
+
+let currentInput           = "0";
+let storedValue            = null;
+let pendingOperator        = null;
+let waitingForSecondNumber = false;
+let justEvaluated          = false;
+let isError                = false;
+
+const MAX_DIGITS = 15;   // stops the display from overflowing
+
+// Symbols used on screen (the code uses * and / internally)
+const OPERATOR_SYMBOLS = { "+": "+", "-": "\u2212", "*": "\u00D7", "/": "\u00F7" };
+
+
+/* ---------- 3. SAFE STORAGE HELPER ----------
+   localStorage can be blocked (private browsing, sandboxed preview
+   windows). These wrappers keep the calculator working either way by
+   falling back to a normal variable that lasts for the session.        */
+
+const STORAGE_KEY = "smartCalculator.history";
+const THEME_KEY   = "smartCalculator.theme";
+
+let memoryStore = {};                 // fallback when localStorage is unavailable
+
+function storageGet(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch (e) {
+    return memoryStore[key] !== undefined ? memoryStore[key] : null;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (e) {
+    memoryStore[key] = value;
+  }
+}
+
+
+/* ---------- 4. NUMBER HELPERS ---------- */
+
+/* Floating point maths gives results like 0.1 + 0.2 = 0.30000000000000004.
+   Rounding to 12 significant digits removes that noise. */
+function roundResult(value) {
+  if (!isFinite(value)) return value;
+  return parseFloat(value.toPrecision(12));
+}
+
+/* Turns a number into the plain text the calculator stores. */
+function numberToText(value) {
+  if (!isFinite(value)) return "0";
+
+  const abs = Math.abs(value);
+  // Use scientific notation for numbers that are far too big or too small
+  if (abs !== 0 && (abs >= 1e15 || abs < 1e-9)) {
+    // 1.000000e-10 reads better as 1e-10, so trailing zeros are trimmed
+    return value.toExponential(6).replace(/\.?0+e/, "e");
+  }
+  return String(value);
+}
+
+/* Adds thousand separators for the display only.
+   The raw value in currentInput is never changed, so maths stays accurate. */
+function formatForDisplay(text) {
+  if (text.includes("e") || text.includes("E")) return text;   // leave exponentials alone
+
+  const negative = text.startsWith("-");
+  const unsigned = negative ? text.slice(1) : text;
+  const parts    = unsigned.split(".");
+
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  // "12." keeps its trailing dot while the user is still typing
+  let out = parts.length > 1 ? parts[0] + "." + parts[1] : parts[0];
+  if (text.endsWith(".") && !out.endsWith(".")) out += ".";
+
+  return negative ? "-" + out : out;
+}
+
+/* Counts only the digits, so "-12.5" counts as 3 digits. */
+function digitCount(text) {
+  return text.replace(/[^0-9]/g, "").length;
+}
+
+
+/* ---------- 5. CORE MATHS ----------
+   One small function per operation. calculate() picks the right one.
+   Division by zero throws an error that is caught where it is called.  */
+
+function add(a, b)      { return a + b; }
+function subtract(a, b) { return a - b; }
+function multiply(a, b) { return a * b; }
+
+function divide(a, b) {
+  if (b === 0) throw new Error("Cannot divide by zero");
+  return a / b;
+}
+
+function calculate(a, b, operator) {
+  let answer;
+
+  switch (operator) {
+    case "+": answer = add(a, b);      break;
+    case "-": answer = subtract(a, b); break;
+    case "*": answer = multiply(a, b); break;
+    case "/": answer = divide(a, b);   break;
+    default:  throw new Error("Unknown operator");
+  }
+
+  if (!isFinite(answer)) throw new Error("Result is out of range");
+  return roundResult(answer);
+}
+
+
+/* ---------- 6. BUTTON ACTIONS ---------- */
+
+function inputNumber(digit) {
+  if (isError) clearAll();
+
+  if (waitingForSecondNumber) {
+    // First digit after an operator replaces whatever is on screen
+    currentInput = digit;
+    waitingForSecondNumber = false;
+  } else if (justEvaluated) {
+    // Typing after "=" starts a brand new calculation
+    resetCalculation();
+    currentInput = digit;
+  } else if (currentInput === "0") {
+    currentInput = digit;                 // no leading zeros
+  } else if (currentInput === "-0") {
+    currentInput = "-" + digit;
+  } else {
+    if (digitCount(currentInput) >= MAX_DIGITS) return;   // ignore extra digits
+    currentInput += digit;
+  }
+
+  updateDisplay();
+}
+
+function inputDecimal() {
+  if (isError) clearAll();
+
+  if (waitingForSecondNumber) {
+    currentInput = "0.";
+    waitingForSecondNumber = false;
+  } else if (justEvaluated) {
+    resetCalculation();
+    currentInput = "0.";
+  } else if (!currentInput.includes(".")) {
+    currentInput += ".";                  // only one decimal point allowed
+  }
+
+  updateDisplay();
+}
+
+function toggleSign() {
+  if (isError) return;
+
+  if (waitingForSecondNumber) {
+    currentInput = "-0";                  // start the next number as negative
+    waitingForSecondNumber = false;
+  } else {
+    currentInput = currentInput.startsWith("-")
+      ? currentInput.slice(1)
+      : "-" + currentInput;
+  }
+
+  updateDisplay();
+}
+
+/* Percentage.
+   With a pending + or -, "200 + 10 %" means 10% of 200 (= 20), which is
+   how phone calculators behave. Otherwise % simply divides by 100. */
+function inputPercent() {
+  if (isError) return;
+  if (waitingForSecondNumber) return;     // nothing typed yet, so ignore
+
+  const value = parseFloat(currentInput) || 0;
+  let percentValue;
+
+  if (storedValue !== null && (pendingOperator === "+" || pendingOperator === "-")) {
+    percentValue = storedValue * (value / 100);
+  } else {
+    percentValue = value / 100;
+  }
+
+  currentInput  = numberToText(roundResult(percentValue));
+  justEvaluated = false;
+  updateDisplay();
+}
+
+function chooseOperator(operator) {
+  if (isError) return;
+
+  // Pressing two operators in a row just swaps the operator
+  if (pendingOperator !== null && waitingForSecondNumber) {
+    pendingOperator = operator;
+    updateDisplay();
+    return;
+  }
+
+  const inputValue = parseFloat(currentInput) || 0;
+
+  if (storedValue !== null && pendingOperator !== null) {
+    // Chained calculation, e.g. 2 + 3 + -> shows 5 before continuing
+    try {
+      const answer = calculate(storedValue, inputValue, pendingOperator);
+      storedValue  = answer;
+      currentInput = numberToText(answer);
+    } catch (error) {
+      showError(error.message);
+      return;
+    }
+  } else {
+    storedValue = inputValue;
+  }
+
+  pendingOperator        = operator;
+  waitingForSecondNumber = true;
+  justEvaluated          = false;
+  updateDisplay();
+}
+
+function equals() {
+  if (isError || pendingOperator === null) return;
+
+  const firstValue  = storedValue;
+  const secondValue = parseFloat(currentInput) || 0;
+  const symbol      = OPERATOR_SYMBOLS[pendingOperator];
+  const sumText     = numberToText(firstValue) + " " + symbol + " " + numberToText(secondValue);
+
+  let answer;
+  try {
+    answer = calculate(firstValue, secondValue, pendingOperator);
+  } catch (error) {
+    showError(error.message);
+    return;
+  }
+
+  currentInput           = numberToText(answer);
+  storedValue            = null;
+  pendingOperator        = null;
+  waitingForSecondNumber = false;
+  justEvaluated          = true;          // the answer can now be reused
+
+  addToHistory(sumText, currentInput);
+  updateDisplay(sumText + " =");
+}
+
+function deleteLast() {
+  if (isError) { clearAll(); return; }
+
+  // Backspace straight after an operator removes that operator and
+  // puts the first number back on screen, ready to be edited
+  if (waitingForSecondNumber) {
+    if (storedValue !== null) currentInput = numberToText(storedValue);
+    resetCalculation();
+    updateDisplay();
+    return;
+  }
+
+  if (justEvaluated) { clearAll(); return; }
+
+  currentInput = currentInput.slice(0, -1);
+  if (currentInput === "" || currentInput === "-") currentInput = "0";
+
+  updateDisplay();
+}
+
+function resetCalculation() {
+  storedValue            = null;
+  pendingOperator        = null;
+  waitingForSecondNumber = false;
+  justEvaluated          = false;
+}
+
+function clearAll() {
+  currentInput = "0";
+  isError      = false;
+  resetCalculation();
+  updateDisplay();
+}
+
+function showError(message) {
+  isError      = true;
+  currentInput = "0";
+  resetCalculation();
+
+  resultEl.textContent = message;
+  resultEl.classList.add("error");
+  resultEl.classList.remove("small");
+  expressionEl.textContent = "Press AC to start again";
+  highlightActiveOperator();
+}
+
+
+/* ---------- 7. DISPLAY UPDATING ---------- */
+
+function updateDisplay(expressionText) {
+  isError = false;
+  resultEl.classList.remove("error");
+
+  const shown = formatForDisplay(currentInput);
+  resultEl.textContent = shown;
+
+  // Shrink the font when the number gets long so it always fits
+  resultEl.classList.toggle("small", shown.length > 11);
+
+  if (expressionText !== undefined) {
+    expressionEl.textContent = expressionText;
+  } else if (pendingOperator !== null && storedValue !== null) {
+    const symbol = OPERATOR_SYMBOLS[pendingOperator];
+    const second = waitingForSecondNumber ? "" : " " + formatForDisplay(currentInput);
+    expressionEl.textContent =
+      formatForDisplay(numberToText(storedValue)) + " " + symbol + second;
+  } else {
+    expressionEl.innerHTML = "&nbsp;";
+  }
+
+  highlightActiveOperator();
+}
+
+/* Puts a ring around the operator that is waiting for a second number. */
+function highlightActiveOperator() {
+  const operatorKeys = keypadEl.querySelectorAll(".key-op");
+  operatorKeys.forEach(function (key) {
+    const isActive = waitingForSecondNumber && key.dataset.value === pendingOperator;
+    key.classList.toggle("active", isActive);
+  });
+}
+
+
+/* ---------- 8. HISTORY ---------- */
+
+const HISTORY_LIMIT = 5;
+let history = [];
+
+function loadHistory() {
+  const saved = storageGet(STORAGE_KEY);
+  if (!saved) return;
+
+  try {
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) history = parsed.slice(0, HISTORY_LIMIT);
+  } catch (e) {
+    history = [];                         // ignore damaged saved data
+  }
+}
+
+function saveHistory() {
+  storageSet(STORAGE_KEY, JSON.stringify(history));
+}
+
+function addToHistory(sumText, answerText) {
+  history.unshift({ sum: sumText, answer: answerText });   // newest first
+  history = history.slice(0, HISTORY_LIMIT);               // keep only five
+  saveHistory();
+  renderHistory();
+}
+
+function renderHistory() {
+  historyListEl.innerHTML = "";
+
+  const isEmpty = history.length === 0;
+  historyEmptyEl.classList.toggle("hidden", !isEmpty);
+  historyListEl.classList.toggle("hidden", isEmpty);
+  if (isEmpty) return;
+
+  history.forEach(function (entry) {
+    const item   = document.createElement("li");
+    const button = document.createElement("button");
+
+    button.type      = "button";
+    button.className = "history-item";
+    button.title     = "Use this answer";
+    button.innerHTML =
+      '<span class="hx-expression"></span><span class="hx-result"></span>';
+
+    // textContent is used so saved data can never inject HTML
+    button.querySelector(".hx-expression").textContent = entry.sum + " =";
+    button.querySelector(".hx-result").textContent     = formatForDisplay(entry.answer);
+
+    // Clicking a past result loads it back into the calculator
+    button.addEventListener("click", function () {
+      currentInput = entry.answer;
+      resetCalculation();
+      justEvaluated = true;
+      updateDisplay();
+    });
+
+    item.appendChild(button);
+    historyListEl.appendChild(item);
+  });
+}
+
+function clearHistory() {
+  history = [];
+  saveHistory();
+  renderHistory();
+}
+
+
+/* ---------- 9. THEME TOGGLE ---------- */
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+
+  const isLight = theme === "light";
+  themeIconEl.innerHTML   = isLight ? "&#9728;" : "&#9790;";   // sun / moon
+  themeLabelEl.textContent = isLight ? "Light" : "Dark";
+  themeToggleBtn.setAttribute("aria-pressed", String(isLight));
+
+  storageSet(THEME_KEY, theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  applyTheme(current === "light" ? "dark" : "light");
+}
+
+
+/* ---------- 10. EVENT LISTENERS ---------- */
+
+/* One listener on the keypad handles every button (event delegation). */
+keypadEl.addEventListener("click", function (event) {
+  const button = event.target.closest(".key");
+  if (!button) return;
+
+  runAction(button.dataset.action, button.dataset.value);
+});
+
+/* Runs the action attached to a button. */
+function runAction(action, value) {
+  switch (action) {
+    case "number":   inputNumber(value);    break;
+    case "decimal":  inputDecimal();        break;
+    case "operator": chooseOperator(value); break;
+    case "equals":   equals();              break;
+    case "clear":    clearAll();            break;
+    case "delete":   deleteLast();          break;
+    case "percent":  inputPercent();        break;
+    case "sign":     toggleSign();          break;
+  }
+}
+
+clearHistoryBtn.addEventListener("click", clearHistory);
+themeToggleBtn.addEventListener("click", toggleTheme);
+
+/* --- Keyboard support --- */
+
+document.addEventListener("keydown", function (event) {
+  const key = event.key;
+  let selector = null;                    // which button to animate
+
+  if (key >= "0" && key <= "9") {
+    inputNumber(key);
+    selector = '.key[data-action="number"][data-value="' + key + '"]';
+
+  } else if (key === "." || key === ",") {
+    inputDecimal();
+    selector = '.key[data-action="decimal"]';
+
+  } else if (key === "+" || key === "-" || key === "*" || key === "/") {
+    chooseOperator(key);
+    selector = '.key[data-action="operator"][data-value="' + key + '"]';
+
+  } else if (key === "Enter" || key === "=") {
+    event.preventDefault();               // stops Enter re-clicking a button
+    equals();
+    selector = '.key[data-action="equals"]';
+
+  } else if (key === "Backspace") {
+    deleteLast();
+    selector = '.key[data-action="delete"]';
+
+  } else if (key === "Escape") {
+    clearAll();
+    selector = '.key[data-action="clear"]';
+
+  } else if (key === "%") {
+    inputPercent();
+    selector = '.key[data-action="percent"]';
+
+  } else {
+    return;                               // any other key is ignored
+  }
+
+  flashKey(selector);
+});
+
+/* Briefly adds the pressed style so keyboard input feels like a real click. */
+function flashKey(selector) {
+  const button = keypadEl.querySelector(selector);
+  if (!button) return;
+
+  button.classList.add("pressed");
+  setTimeout(function () {
+    button.classList.remove("pressed");
+  }, 110);
+}
+
+
+/* ---------- START UP ---------- */
+
+applyTheme(storageGet(THEME_KEY) === "light" ? "light" : "dark");
+loadHistory();
+renderHistory();
+updateDisplay();
+
+  </script>
+</body>
+</html>
